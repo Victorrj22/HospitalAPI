@@ -20,12 +20,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/buscar_todas_consultas", async () =>
+app.MapGet("/consultas", async () =>
     {
         var consultas = await serviceHospital.BuscarTodasConsultas();
         return Results.Ok(consultas);;
     })
-    .WithName("buscar_todas_consultas")
+    .WithName("consultas")
     .WithOpenApi();
 
 app.Run();
