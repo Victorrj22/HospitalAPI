@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace HospitalAPI.Models;
 
@@ -19,7 +20,9 @@ public partial class Consulta
 
     public bool Cancelada { get; set; }
 
+    [JsonIgnore]
     public virtual Medico? IdMedicoNavigation { get; set; }
 
+    [JsonIgnore]
     public virtual Paciente? IdPacienteNavigation { get; set; }
 }
