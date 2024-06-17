@@ -3,7 +3,8 @@ using System.Text.Json.Serialization;
 using HospitalAPI.Models;
 using HospitalAPI.Service;
 
-var serviceHospital = new ServiceHospital(new DbgeralContext());
+var serviceHospital = new ServiceConsulta(new DbgeralContext());
+var servicePaciente = new ServicePaciente(new DbgeralContext()); // Instância do serviço de pacientes
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -64,6 +65,65 @@ app.MapDelete("/consultas", async (int id) =>
 
 
 #endregion
+#region Pacientes
 
+// Pacientes: Busca todos os pacientes
+app.MapGet("/pacientes", async () =>
+{
+    var pacientes = await servicePaciente.BuscarTodosPacientes();
+    return Results.Ok(pacientes);
+}).Produces<IEnumerable<Paciente>>().WithName("pacientes").WithOpenApi();
+
+// Pacientes: Busca paciente por ID
+app.MapGet("/pacientes/{id}", async (int id) =>
+{
+    var paciente = await servicePaciente.BuscarPacientePorId(id);
+    if (paciente == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(paciente);
+}).Produces<Paciente>().WithName("pacientes/id").WithOpenApi();
+
+// Endpoint para criar um novo paciente
+app.MapPost("/pacientes", async (string nome, DateOnly data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
+{
+    var novoPaciente = await servicePaciente.CriarNovoPaciente(nome, data_Nasc, peso, altura, telefone, endereco);
+
+    // Aqui você pode retornar o paciente criado ou uma resposta de sucesso, conforme necessário
+    return Results.Created($"/pacientes/{novoPaciente.Id}", novoPaciente);
+}).Produces<Paciente>().WithName("pacientes/add").WithOpenApi();
+
+
+
+// Endpoint para atualizar um paciente
+app.MapPut("/pacientes/{id}", async (int id, string nome, DateOnly data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
+{
+    var pacienteAtualizado = await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
+
+    // Verifica se o paciente foi encontrado e atualizado com sucesso
+    if (pacienteAtualizado != null)
+    {
+        return Results.Ok(pacienteAtualizado); // Retorna o paciente atualizado
+    }
+    else
+    {
+        return Results.NotFound($"Paciente com ID {id} não encontrado."); // Retorna erro 404 se o paciente não foi encontrado
+    }
+}).Produces<Paciente>().WithName("pacientes/update").WithOpenApi();
+
+
+// Pacientes: Deleta um paciente
+app.MapDelete("/pacientes/{id}", async (int id) =>
+{
+    var pacienteDeletado = await servicePaciente.DeletarPaciente(id);
+    if (pacienteDeletado == null)
+    {
+        return Results.NotFound();
+    }
+    return Results.Ok(pacienteDeletado);
+}).Produces<Paciente>().WithName("pacientes/delete").WithOpenApi();
+
+#endregion
 
 app.Run();

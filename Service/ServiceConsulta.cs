@@ -6,11 +6,11 @@ using static HospitalAPI.Models.DiasAtendimentoEnum;
 
 namespace HospitalAPI.Service;
 
-public class ServiceHospital
+public class ServiceConsulta
 {
     private readonly DbgeralContext _dbgeralContext;
 
-    public ServiceHospital(DbgeralContext dbgeralContext)
+    public ServiceConsulta(DbgeralContext dbgeralContext)
     {
         _dbgeralContext = dbgeralContext;
     }

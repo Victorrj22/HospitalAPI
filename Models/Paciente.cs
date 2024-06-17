@@ -9,7 +9,7 @@ public partial class Paciente
 
     public string Nome { get; set; } = null!;
 
-    public int Idade { get; set; }
+    public DateOnly Data_Nasc { get; set; }
 
     public decimal Peso { get; set; }
 
