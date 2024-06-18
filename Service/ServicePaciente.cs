@@ -42,12 +42,12 @@ namespace HospitalAPI.Service
         /// <param name="endereco"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<Paciente> CriarNovoPaciente(string nome, DateOnly data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco)
+        public async Task<Paciente> CriarNovoPaciente(string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco)
         {
             var novoPaciente = new Paciente()
             {
                 Nome = nome,
-                Data_Nasc = data_Nasc,
+                DataNasc = data_Nasc,
                 Peso = peso,
                 Altura = altura,
                 Telefone = telefone,
@@ -72,7 +72,7 @@ namespace HospitalAPI.Service
         /// <param name="endereco"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public async Task<Paciente> AtualizarPaciente(int id, string nome, DateOnly data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco)
+        public async Task<Paciente> AtualizarPaciente(int id, string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco)
         {
             var paciente = await _dbgeralContext.Pacientes.FirstOrDefaultAsync(p => p.Id == id);
 
@@ -82,7 +82,7 @@ namespace HospitalAPI.Service
             }
 
             paciente.Nome = nome;
-            paciente.Data_Nasc = data_Nasc;
+            paciente.DataNasc = data_Nasc;
             paciente.Peso = peso;
             paciente.Altura = altura;
             paciente.Telefone = telefone;

@@ -1,0 +1,67 @@
+IF EXISTS (SELECT name FROM sys.databases WHERE name = N'DBGeral')
+BEGIN
+    DROP DATABASE DBGeral;
+END;
+GO
+
+-- Cria o banco de dados DBGeral.
+CREATE DATABASE DBGeral;
+GO
+
+USE DBGeral;
+GO
+
+-- Criação da tabela Paciente.
+CREATE TABLE Paciente (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    Nome NVARCHAR(100) NOT NULL,
+    Data_Nascimento DATETIME NOT NULL,
+    Peso DECIMAL(5,2) NOT NULL,
+    Altura DECIMAL(4,2) NOT NULL,
+    Telefone INT,
+    Endereco INT
+);
+GO
+
+-- Criação da tabela Telefone.
+CREATE TABLE Telefone (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    IdPaciente INT FOREIGN KEY REFERENCES Paciente(Id),
+    DDD NVARCHAR(3) NOT NULL,
+    Numero NVARCHAR(10) NOT NULL
+);
+GO
+
+-- Criação da tabela Endereco.
+CREATE TABLE Endereco (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    IdPaciente INT FOREIGN KEY REFERENCES Paciente(Id),
+    Rua NVARCHAR(100) NOT NULL,
+    Numero INT NOT NULL,
+    Bairro NVARCHAR(50) NOT NULL,
+    Cidade NVARCHAR(50) NOT NULL,
+    Estado NVARCHAR(2) NOT NULL
+);
+GO
+
+-- Criação da tabela Medico.
+CREATE TABLE Medico (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    Nome NVARCHAR(100) NOT NULL,
+    Especialidade INT NOT NULL,
+    CRM NVARCHAR(20) NOT NULL,
+    Agenda INT NOT NULL
+);
+GO
+
+-- Criação da tabela Consultas.
+CREATE TABLE Consultas (
+    Id INT PRIMARY KEY IDENTITY(1,1),
+    IdPaciente INT FOREIGN KEY REFERENCES Paciente(Id),
+    IdMedico INT FOREIGN KEY REFERENCES Medico(Id),
+    Data DATETIME NOT NULL,
+    Valor DECIMAL(10,2) NOT NULL,
+    MetodoPagamento INT NOT NULL,
+    Cancelada BIT NOT NULL
+);
+GO

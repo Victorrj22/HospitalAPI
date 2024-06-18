@@ -86,7 +86,7 @@ app.MapGet("/pacientes/{id}", async (int id) =>
 }).Produces<Paciente>().WithName("pacientes/id").WithOpenApi();
 
 // Endpoint para criar um novo paciente
-app.MapPost("/pacientes", async (string nome, DateOnly data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
+app.MapPost("/pacientes", async (string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
 {
     var novoPaciente = await servicePaciente.CriarNovoPaciente(nome, data_Nasc, peso, altura, telefone, endereco);
 
@@ -97,7 +97,7 @@ app.MapPost("/pacientes", async (string nome, DateOnly data_Nasc, decimal peso, 
 
 
 // Endpoint para atualizar um paciente
-app.MapPut("/pacientes/{id}", async (int id, string nome, DateOnly data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
+app.MapPut("/pacientes/{id}", async (int id, string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
 {
     var pacienteAtualizado = await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
 
