@@ -43,16 +43,16 @@ app.MapGet("/consultas/id", async (int IdConsulta) =>
 }).WithName("consultas/id").WithOpenApi();
 
 // Cria nova consulta
-app.MapPost("/consultas", async (string nomePaciente, string nomeMedico, DateTime dataConsulta, string metodoPagamento) =>
+app.MapPost("/consultas", async (int idPaciente, int idMedico, DateTime dataConsulta, string metodoPagamento) =>
 {
-    var retorno = await serviceHospital.CriarNovaConsulta(nomePaciente, nomeMedico, dataConsulta, metodoPagamento);
+    var retorno = await serviceHospital.CriarNovaConsulta(idPaciente, idMedico, dataConsulta, metodoPagamento);
     return Results.Ok(retorno);
 }).WithName("consultas/add").WithOpenApi();
 
-// Atualiza a data da consulta
-app.MapPut("/consultas", async (int id, DateTime dataConsulta) =>
+// Atualiza a consulta
+app.MapPut("/consultas", async (int id, DateTime dataConsulta, bool cancelar) =>
 {
-    var retorno = await serviceHospital.AtualizaData(id, dataConsulta);
+    var retorno = await serviceHospital.AtualizaData(id, dataConsulta, cancelar);
     return Results.Ok(retorno);
 }).WithName("consultas/update").WithOpenApi();
 

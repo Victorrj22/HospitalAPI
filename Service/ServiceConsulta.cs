@@ -45,7 +45,7 @@ public class ServiceConsulta
     /// <param name="metodoPagamento"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<Consulta> CriarNovaConsulta(string nomePaciente, string nomeMedico, DateTime dataConsulta, string metodoPagamento)
+    public async Task<Consulta> CriarNovaConsulta(int idPaciente, int idMedico, DateTime dataConsulta, string metodoPagamento)
     {
         //Puxa o dia da Semana
         DayOfWeek diaSemana = dataConsulta.DayOfWeek;
@@ -66,6 +66,25 @@ public class ServiceConsulta
             throw new Exception("O Dia da semana não é válido. Escolha um dia de Segunda-Sexta");
         }
         
+        var diaAtendimentoString = "";
+        switch (diaAtendimento)
+        {
+            case 1:
+                diaAtendimentoString = "Segunda-Feira";
+                break;
+            case 2:
+                diaAtendimentoString = "Terça-Feira";
+                break;
+            case 3:
+                diaAtendimentoString = "Quarta-Feira";
+                break;
+            case 4:
+                diaAtendimentoString = "Quinta-Feira";
+                break;
+            case 5:
+                diaAtendimentoString = "Sexta-Feira";
+                break;
+        }
         //Mapeia os métodos de pagamento com o Enum
         var metodoPagamentoMap = new Dictionary<string, MetodoPagamentoEnum>(StringComparer.OrdinalIgnoreCase)
         {
@@ -82,9 +101,9 @@ public class ServiceConsulta
         }
         
         //Busca o médico com o mesmo nome passado no parâmetro
-        var medico = await _dbgeralContext.Medicos.FirstOrDefaultAsync(m => m.Nome.ToLower().Contains(nomeMedico.ToLower()));
+        var medico = await _dbgeralContext.Medicos.FirstOrDefaultAsync(m => m.Id == idMedico);
         //Busca o paciente com o mesmo nome passado no parâmetro
-        var paciente = await _dbgeralContext.Pacientes.FirstOrDefaultAsync(p => p.Nome.ToLower().Contains(nomePaciente.ToLower()));
+        var paciente = await _dbgeralContext.Pacientes.FirstOrDefaultAsync(p => p.Id == idPaciente);
         
         if (medico != null)
         {
@@ -121,12 +140,12 @@ public class ServiceConsulta
             }
             else
             {
-                throw new Exception("O médico não atende no dia escolhido. Escolha outro dia");
+                throw new Exception($"O médico não atende no dia escolhido. Horário do médico: {diaAtendimentoString} ");
             }
         }
         else
         {
-            throw new Exception($"Não foi encontrado nenhum médico com o nome {nomeMedico}");
+            throw new Exception($"Não foi encontrado nenhum médico com o id {idMedico}");
         }
     }
 
@@ -137,7 +156,7 @@ public class ServiceConsulta
     /// <param name="dataConsulta"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public async Task<Consulta> AtualizaData(int id, DateTime dataConsulta)
+    public async Task<Consulta> AtualizaData(int id, DateTime dataConsulta, bool cancelar)
     {
         var consulta = await _dbgeralContext.Consultas.FirstOrDefaultAsync(c => c.Id == id);
         
@@ -145,7 +164,11 @@ public class ServiceConsulta
         {
             throw new Exception($"Consulta com ID {id} não encontrada.");
         }
-        
+
+        if (dataConsulta != null)
+        {
+            
+        }
         var medico = await _dbgeralContext.Medicos.FirstOrDefaultAsync(m => m.Id == consulta!.IdMedico);
         
         //Puxa o dia da Semana
@@ -161,21 +184,43 @@ public class ServiceConsulta
             { DayOfWeek.Friday, (int)DiasAtendimentoEnum.Sexta },
         };
         
+        
         // Verifica se a data é válida
         if (!diaAtendimentoMap.TryGetValue(diaSemana, out var diaAtendimento))
         {
             throw new Exception("O Dia da semana não é válido. Escolha um dia de Segunda-Sexta");
         }
 
+        var diaAtendimentoString = "";
+        switch (diaAtendimento)
+        {
+            case 1:
+                diaAtendimentoString = "Segunda-Feira";
+                break;
+            case 2:
+                diaAtendimentoString = "Terça-Feira";
+                break;
+            case 3:
+                diaAtendimentoString = "Quarta-Feira";
+                break;
+            case 4:
+                diaAtendimentoString = "Quinta-Feira";
+                break;
+            case 5:
+                diaAtendimentoString = "Sexta-Feira";
+                break;
+        }
+        
         if (medico!.Agenda == diaAtendimento)
         {
             consulta.Data = dataConsulta;
+            consulta.Cancelada = cancelar;
             await _dbgeralContext.SaveChangesAsync();
             return consulta;
         }
         else
         {
-            throw new Exception("O médico não atende no dia escolhido. Escolha outro dia");
+            throw new Exception($"O médico não atende no dia escolhido. Dia(s) de atendimento: {diaAtendimento}");
         }
         
     }
