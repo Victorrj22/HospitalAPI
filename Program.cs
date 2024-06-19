@@ -4,6 +4,7 @@ using HospitalAPI.Models;
 using HospitalAPI.Service;
 
 var serviceHospital = new ServiceConsulta(new DbgeralContext());
+var serviceMedico = new ServiceMedico(new DbgeralContext());
 var servicePaciente = new ServicePaciente(new DbgeralContext()); // Instância do serviço de pacientes
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,9 +37,9 @@ app.MapGet("/consultas", async () =>
 }).WithName("consultas").WithOpenApi();
 
 // Busca consulta por ID
-app.MapGet("/consultas/id", async (int IdConsulta) =>
+app.MapGet("/consultas/{id}", async (int id) =>
 {
-    var consulta = await serviceHospital.BuscarConsultaId(IdConsulta);
+    var consulta = await serviceHospital.BuscarConsultaId(id);
     return Results.Ok(consulta);
 }).WithName("consultas/id").WithOpenApi();
 
@@ -65,6 +66,7 @@ app.MapDelete("/consultas", async (int id) =>
 
 
 #endregion
+
 #region Pacientes
 
 // Pacientes: Busca todos os pacientes
@@ -124,6 +126,44 @@ app.MapDelete("/pacientes/{id}", async (int id) =>
     return Results.Ok(pacienteDeletado);
 }).Produces<Paciente>().WithName("pacientes/delete").WithOpenApi();
 
+#endregion
+
+#region Medicos
+
+// Busca todos os Médicos
+app.MapGet("/medicos", async () =>
+{
+    var consultas = await serviceMedico.BuscaTodosMedicos();
+    return Results.Ok(consultas);
+}).WithName("medicos").WithOpenApi();
+
+// Busca Médico por id
+app.MapGet("/medicos/{id}", async (int id) =>
+{
+    var consultas = await serviceMedico.BuscaMedicoId(id);
+    return Results.Ok(consultas);
+}).WithName("medicos/id").WithOpenApi();
+
+// Cria um novo médico
+app.MapPost("/medicos/{id}", async (string nome, int especialidade, string crm,int agenda) =>
+{
+    var consultas = await serviceMedico.AdicionaNovoMedico(nome, especialidade, crm, agenda);
+    return Results.Ok(consultas);
+}).WithName("medicos/add").WithOpenApi();
+
+// Atualiza informação Medico
+app.MapPut("/medicos/{id}", async (int id, string nome, int especialidade, string crm,int agenda) =>
+{
+    var consultas = await serviceMedico.AtualizaMedico(id,nome, especialidade, crm, agenda);
+    return Results.Ok(consultas);
+}).WithName("medicos/update").WithOpenApi();
+
+// Deleta Medico
+app.MapDelete("/medicos/{id}", async (int id) =>
+{
+    var consultas = await serviceMedico.DeletaMedico(id);
+    return Results.Ok(consultas);
+}).WithName("medicos/delete").WithOpenApi();
 #endregion
 
 app.Run();

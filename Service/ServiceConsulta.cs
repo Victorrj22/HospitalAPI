@@ -33,7 +33,12 @@ public class ServiceConsulta
     /// <returns></returns>
     public async Task<IEnumerable<Consulta>> BuscarConsultaId(int id)
     {
-        return await _dbgeralContext.Consultas.Where(c => c.Id == id).ToListAsync();
+        var consulta =  await _dbgeralContext.Consultas.Where(c => c.Id == id).ToListAsync();
+        if (consulta.Count == 0)
+        {
+            throw new Exception("Não existe uma consulta com esse Id");
+        }
+        return consulta;
     }
 
     /// <summary>
