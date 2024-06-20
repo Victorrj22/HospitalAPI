@@ -3,13 +3,12 @@ using HospitalAPI.DTOs;
 using HospitalAPI.Models;
 using HospitalAPI.Service;
 
-var serviceHospital = new ServiceConsulta(new DbgeralContext());
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<DbgeralContext>();
 builder.Services.AddScoped<ServicePaciente>();
 builder.Services.AddScoped<ServiceMedico>();
+builder.Services.AddScoped<ServiceConsulta>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -39,38 +38,57 @@ app.UseCors();
 #region Consultas
 
 // Busca todas as consultas
-app.MapGet("/consultas", async () =>
+app.MapGet("/consultas", async (ServiceConsulta serviceConsulta) =>
 {
-    var consultas = await serviceHospital.BuscarTodasConsultas();
-    return Results.Ok(consultas);
+    var consultas = await serviceConsulta.BuscarTodasConsultas();
+
+    var consultasDto = consultas.Select(c => new ConsultaResponse(c.Id, c.IdPacienteNavigation!.Nome,
+        c.IdPaciente!.Value, c.IdMedicoNavigation!.Nome, c.IdMedico!.Value, c.Data, c.Valor, c.GetMetodoPagamento(),
+        c.Cancelada));
+
+    return Results.Ok(consultasDto);
 }).WithName("consultas").WithOpenApi();
 
 // Busca consulta por ID
-app.MapGet("/consultas/{id}", async (int id) =>
+app.MapGet("/consultas/{id}", async (ServiceConsulta serviceConsulta, int id) =>
 {
-    var consulta = await serviceHospital.BuscarConsultaId(id);
+    var consulta = await serviceConsulta.BuscarConsultaId(id);
     return Results.Ok(consulta);
 }).WithName("consultas/id").WithOpenApi();
 
 // Cria nova consulta
-app.MapPost("/consultas", async (int idPaciente, int idMedico, DateTime dataConsulta, string metodoPagamento) =>
+app.MapPost("/consultas", async (ServiceConsulta serviceConsulta, ConsultaRequest consultaRequest) =>
 {
-    var retorno = await serviceHospital.CriarNovaConsulta(idPaciente, idMedico, dataConsulta, metodoPagamento);
-    return Results.Ok(retorno);
+    var idPaciente = consultaRequest.paciente_id;
+    var idMedico = consultaRequest.medico_id;
+    var dataConsulta = consultaRequest.data_marcada;
+    var metodoPagamento = consultaRequest.metodo_pagamento;
+
+    var retorno = await serviceConsulta.CriarNovaConsulta(idPaciente, idMedico, dataConsulta, metodoPagamento);
+    return Results.Created($"/consultas/{retorno.Id}", retorno);
 }).WithName("consultas/add").WithOpenApi();
 
 // Atualiza a consulta
-app.MapPut("/consultas", async (int id, DateTime dataConsulta, bool cancelar) =>
+app.MapPut("/consultas/{id}", async (ServiceConsulta serviceConsulta, int id, ConsultaRequest ConsultaRequest) =>
 {
-    var retorno = await serviceHospital.AtualizaData(id, dataConsulta, cancelar);
-    return Results.Ok(retorno);
+    await serviceConsulta.AtualizaConsulta(new Consulta()
+    {
+        Id = id,
+        IdPaciente = ConsultaRequest.paciente_id,
+        IdMedico = ConsultaRequest.medico_id,
+        Data = ConsultaRequest.data_marcada,
+        Valor = ConsultaRequest.valor,
+        MetodoPagamento = (int)Enum.Parse<MetodoPagamentoEnum>(ConsultaRequest.metodo_pagamento),
+        Cancelada = ConsultaRequest.cancelada
+    });
+    return Results.NoContent();
 }).WithName("consultas/update").WithOpenApi();
 
 // Deleta uma consulta
-app.MapDelete("/consultas", async (int id) =>
+app.MapDelete("/consultas/{id}", async (ServiceConsulta serviceConsulta, int id) =>
 {
-    var retorno = await serviceHospital.DeletaConsulta(id);
-    return Results.Ok(retorno);
+    var retorno = await serviceConsulta.DeletaConsulta(id);
+    return Results.NoContent();
 }).WithName("consultas/delete").WithOpenApi();
 
 #endregion
@@ -81,9 +99,9 @@ app.MapDelete("/consultas", async (int id) =>
 app.MapGet("/pacientes", async (ServicePaciente servicePaciente) =>
 {
     var pacientes = await servicePaciente.BuscarTodosPacientes();
-    
+
     var pacientesDto = pacientes.Select(p => new PacienteResponse(p.Id, p.Nome, p.DataNasc, p.Peso, p.Altura));
-    
+
     return Results.Ok(pacientesDto);
 }).Produces<IEnumerable<Paciente>>().WithName("pacientes").WithOpenApi();
 
@@ -96,7 +114,8 @@ app.MapGet("/pacientes/{id}", async (ServicePaciente servicePaciente, int id) =>
         return Results.NotFound();
     }
 
-    return Results.Ok(new PacienteResponse(paciente.Id, paciente.Nome, paciente.DataNasc, paciente.Peso, paciente.Altura));
+    return Results.Ok(new PacienteResponse(paciente.Id, paciente.Nome, paciente.DataNasc, paciente.Peso,
+        paciente.Altura));
 }).Produces<Paciente>().WithName("pacientes/id").WithOpenApi();
 
 // Endpoint para criar um novo paciente
@@ -104,8 +123,9 @@ app.MapPost("/pacientes", async (ServicePaciente servicePaciente, PacienteReques
 {
     var novoPaciente = await servicePaciente.CriarNovoPaciente(pacienteRequest.nome, pacienteRequest.data_nascimento,
         pacienteRequest.peso, pacienteRequest.altura, pacienteRequest.telefone, pacienteRequest.endereco);
-    
-    var pacienteDto = new PacienteResponse(novoPaciente.Id, novoPaciente.Nome, novoPaciente.DataNasc, novoPaciente.Peso, novoPaciente.Altura);
+
+    var pacienteDto = new PacienteResponse(novoPaciente.Id, novoPaciente.Nome, novoPaciente.DataNasc, novoPaciente.Peso,
+        novoPaciente.Altura);
 
     // Aqui você pode retornar o paciente criado ou uma resposta de sucesso, conforme necessário
     return Results.Created($"/pacientes/{novoPaciente.Id}", pacienteDto);
@@ -122,7 +142,7 @@ app.MapPut("/pacientes/{id}",
         var altura = pacienteRequest.altura;
         var telefone = pacienteRequest.telefone;
         var endereco = pacienteRequest.endereco;
-        
+
         var pacienteAtualizado =
             await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
 
@@ -160,10 +180,10 @@ app.MapDelete("/pacientes/{id}", async (ServicePaciente servicePaciente, int id)
 app.MapGet("/medicos", async (ServiceMedico serviceMedico) =>
 {
     var medicos = await serviceMedico.BuscaTodosMedicos();
-    
+
     var medicosDto = medicos
         .Select(m => new MedicoResponse(m.Id, m.Nome, m.GetEspecialidade(), m.Crm, m.GetDiaAtendimento()));
-    
+
     return Results.Ok(medicosDto);
 }).WithName("medicos").WithOpenApi();
 
@@ -171,7 +191,8 @@ app.MapGet("/medicos", async (ServiceMedico serviceMedico) =>
 app.MapGet("/medicos/{id}", async (ServiceMedico serviceMedico, int id) =>
 {
     var medico = await serviceMedico.BuscaMedicoId(id);
-    var medicoDto = new MedicoResponse(medico.Id, medico.Nome, medico.GetEspecialidade(), medico.Crm, medico.GetDiaAtendimento());
+    var medicoDto = new MedicoResponse(medico.Id, medico.Nome, medico.GetEspecialidade(), medico.Crm,
+        medico.GetDiaAtendimento());
     return Results.Ok(medicoDto);
 }).WithName("medicos/id").WithOpenApi();
 
@@ -180,7 +201,7 @@ app.MapPost("/medicos/", async (ServiceMedico serviceMedico, MedicoRequest medic
 {
     var especialidade = (int)Enum.Parse<EspecialidadeMedicoEnum>(medicoRequest.especialidade);
     var agenda = (int)Enum.Parse<DiasAtendimentoEnum>(medicoRequest.dia_atendimento);
-    
+
     var medico = await serviceMedico.AdicionaNovoMedico(medicoRequest.nome, especialidade, medicoRequest.crm, agenda);
     return Results.Created($"/medicos/{medico.Id}", medico);
 }).WithName("medicos/add").WithOpenApi();
@@ -190,7 +211,7 @@ app.MapPut("/medicos/{id}", async (ServiceMedico serviceMedico, MedicoRequest me
 {
     var especialidade = (int)Enum.Parse<EspecialidadeMedicoEnum>(medicoRequest.especialidade);
     var agenda = (int)Enum.Parse<DiasAtendimentoEnum>(medicoRequest.dia_atendimento);
-    
+
     await serviceMedico.AtualizaMedico(id, medicoRequest.nome, especialidade, medicoRequest.crm, agenda);
     return Results.NoContent();
 }).WithName("medicos/update").WithOpenApi();

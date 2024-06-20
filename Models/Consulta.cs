@@ -25,4 +25,9 @@ public partial class Consulta
 
     [JsonIgnore]
     public virtual Paciente? IdPacienteNavigation { get; set; }
+
+    public string GetMetodoPagamento()
+    {
+        return ((MetodoPagamentoEnum)MetodoPagamento).ToString();
+    }
 }

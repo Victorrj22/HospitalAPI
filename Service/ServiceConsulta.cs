@@ -23,7 +23,10 @@ public class ServiceConsulta
     /// <returns></returns>
     public async Task<IEnumerable<Consulta>> BuscarTodasConsultas()
     {
-        return await _dbgeralContext.Consultas.ToListAsync();
+        return await _dbgeralContext.Consultas
+            .Include(c => c.IdPacienteNavigation)
+            .Include(c => c.IdMedicoNavigation)
+            .ToListAsync();
     }
 
     /// <summary>
@@ -228,6 +231,12 @@ public class ServiceConsulta
             throw new Exception($"O médico não atende no dia escolhido. Dia(s) de atendimento: {diaAtendimento}");
         }
         
+    }
+
+    public async Task AtualizaConsulta(Consulta consulta)
+    {
+        _dbgeralContext.Update(consulta);
+        await _dbgeralContext.SaveChangesAsync();
     }
 
     
