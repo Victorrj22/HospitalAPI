@@ -1,12 +1,17 @@
 using System;
 using System.Text.Json.Serialization;
+using HospitalAPI.DTOs;
 using HospitalAPI.Models;
 using HospitalAPI.Service;
+using Microsoft.AspNetCore.Mvc;
 
 var serviceHospital = new ServiceConsulta(new DbgeralContext());
 var serviceMedico = new ServiceMedico(new DbgeralContext());
-var servicePaciente = new ServicePaciente(new DbgeralContext()); // Instância do serviço de pacientes
+//var servicePaciente = new ServicePaciente(new DbgeralContext()); // Instância do serviço de pacientes
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddDbContext<DbgeralContext>();
+builder.Services.AddScoped<ServicePaciente>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -16,6 +21,10 @@ builder.Services.Configure<Microsoft.AspNetCore.Http.Json.JsonOptions>(options =
 });
 builder.Services.AddControllers().AddNewtonsoftJson(); // Certifique-se de que não há conflitos com System.Text.Json
 
+builder.Services.AddCors(policyBuilder =>
+    policyBuilder.AddDefaultPolicy(policy =>
+        policy.WithOrigins("*").AllowAnyHeader().AllowAnyMethod())
+);
 var app = builder.Build();
 
 // Middleware para Swagger UI
@@ -26,6 +35,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors();
 
 #region Consultas
 
@@ -64,67 +75,77 @@ app.MapDelete("/consultas", async (int id) =>
     return Results.Ok(retorno);
 }).WithName("consultas/delete").WithOpenApi();
 
-
 #endregion
 
 #region Pacientes
 
 // Pacientes: Busca todos os pacientes
-app.MapGet("/pacientes", async () =>
+app.MapGet("/pacientes", async (ServicePaciente servicePaciente) =>
 {
     var pacientes = await servicePaciente.BuscarTodosPacientes();
-    return Results.Ok(pacientes);
+    
+    var pacientesDto = pacientes.Select(p => new PacienteResponse(p.Id, p.Nome, p.DataNasc, p.Peso, p.Altura));
+    
+    return Results.Ok(pacientesDto);
 }).Produces<IEnumerable<Paciente>>().WithName("pacientes").WithOpenApi();
 
 // Pacientes: Busca paciente por ID
-app.MapGet("/pacientes/{id}", async (int id) =>
+app.MapGet("/pacientes/{id}", async (ServicePaciente servicePaciente, int id) =>
 {
     var paciente = await servicePaciente.BuscarPacientePorId(id);
     if (paciente == null)
     {
         return Results.NotFound();
     }
-    return Results.Ok(paciente);
+
+    return Results.Ok(new PacienteResponse(paciente.Id, paciente.Nome, paciente.DataNasc, paciente.Peso, paciente.Altura));
 }).Produces<Paciente>().WithName("pacientes/id").WithOpenApi();
 
 // Endpoint para criar um novo paciente
-app.MapPost("/pacientes", async (string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
+app.MapPost("/pacientes", async (ServicePaciente servicePaciente, PacienteRequest pacienteRequest) =>
 {
-    var novoPaciente = await servicePaciente.CriarNovoPaciente(nome, data_Nasc, peso, altura, telefone, endereco);
+    var novoPaciente = await servicePaciente.CriarNovoPaciente(pacienteRequest.nome, pacienteRequest.data_nascimento,
+        pacienteRequest.peso, pacienteRequest.altura, pacienteRequest.telefone, pacienteRequest.endereco);
+    
+    var pacienteDto = new PacienteResponse(novoPaciente.Id, novoPaciente.Nome, novoPaciente.DataNasc, novoPaciente.Peso, novoPaciente.Altura);
 
     // Aqui você pode retornar o paciente criado ou uma resposta de sucesso, conforme necessário
-    return Results.Created($"/pacientes/{novoPaciente.Id}", novoPaciente);
+    return Results.Created($"/pacientes/{novoPaciente.Id}", pacienteDto);
 }).Produces<Paciente>().WithName("pacientes/add").WithOpenApi();
 
 
-
 // Endpoint para atualizar um paciente
-app.MapPut("/pacientes/{id}", async (int id, string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
-{
-    var pacienteAtualizado = await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
-
-    // Verifica se o paciente foi encontrado e atualizado com sucesso
-    if (pacienteAtualizado != null)
-    {
-        return Results.Ok(pacienteAtualizado); // Retorna o paciente atualizado
-    }
-    else
-    {
-        return Results.NotFound($"Paciente com ID {id} não encontrado."); // Retorna erro 404 se o paciente não foi encontrado
-    }
-}).Produces<Paciente>().WithName("pacientes/update").WithOpenApi();
-
-
-// Pacientes: Deleta um paciente
-app.MapDelete("/pacientes/{id}", async (int id) =>
-{
-    var pacienteDeletado = await servicePaciente.DeletarPaciente(id);
-    if (pacienteDeletado == null)
-    {
-        return Results.NotFound();
-    }
-    return Results.Ok(pacienteDeletado);
-}).Produces<Paciente>().WithName("pacientes/delete").WithOpenApi();
+// app.MapPut("/pacientes/{id}",
+//     async (int id, string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
+//     {
+//         var pacienteAtualizado =
+//             await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
+//
+//         // Verifica se o paciente foi encontrado e atualizado com sucesso
+//         if (pacienteAtualizado != null)
+//         {
+//             return Results.Ok(pacienteAtualizado); // Retorna o paciente atualizado
+//         }
+//         else
+//         {
+//             return
+//                 Results.NotFound(
+//                     $"Paciente com ID {id} não encontrado."); // Retorna erro 404 se o paciente não foi encontrado
+//         }
+//     }).Produces<Paciente>().WithName("pacientes/update").WithOpenApi();
+//
+//
+// // Pacientes: Deleta um paciente
+// app.MapDelete("/pacientes/{id}", async (int id) =>
+// {
+//     var pacienteDeletado = await servicePaciente.DeletarPaciente(id);
+//     if (pacienteDeletado == null)
+//     {
+//         return Results.NotFound();
+//     }
+//
+//     return Results.Ok(pacienteDeletado);
+// }).Produces<Paciente>().WithName("pacientes/delete").WithOpenApi();
 
 #endregion
 
@@ -145,16 +166,16 @@ app.MapGet("/medicos/{id}", async (int id) =>
 }).WithName("medicos/id").WithOpenApi();
 
 // Cria um novo médico
-app.MapPost("/medicos/{id}", async (string nome, int especialidade, string crm,int agenda) =>
+app.MapPost("/medicos/{id}", async (string nome, int especialidade, string crm, int agenda) =>
 {
     var consultas = await serviceMedico.AdicionaNovoMedico(nome, especialidade, crm, agenda);
     return Results.Ok(consultas);
 }).WithName("medicos/add").WithOpenApi();
 
 // Atualiza informação Medico
-app.MapPut("/medicos/{id}", async (int id, string nome, int especialidade, string crm,int agenda) =>
+app.MapPut("/medicos/{id}", async (int id, string nome, int especialidade, string crm, int agenda) =>
 {
-    var consultas = await serviceMedico.AtualizaMedico(id,nome, especialidade, crm, agenda);
+    var consultas = await serviceMedico.AtualizaMedico(id, nome, especialidade, crm, agenda);
     return Results.Ok(consultas);
 }).WithName("medicos/update").WithOpenApi();
 
@@ -164,6 +185,7 @@ app.MapDelete("/medicos/{id}", async (int id) =>
     var consultas = await serviceMedico.DeletaMedico(id);
     return Results.Ok(consultas);
 }).WithName("medicos/delete").WithOpenApi();
+
 #endregion
 
 app.Run();
