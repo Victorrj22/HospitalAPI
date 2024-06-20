@@ -18,10 +18,10 @@ public class ServiceMedico
         return await _dbgeralContext.Medicos.ToListAsync();
     }
 
-    public async Task<List<Medico>> BuscaMedicoId(int id)
+    public async Task<Medico> BuscaMedicoId(int id)
     {
-        var medico = await _dbgeralContext.Medicos.Where(m => m.Id == id).ToListAsync();
-        if (medico.Count == 0)
+        var medico = await _dbgeralContext.Medicos.FirstOrDefaultAsync(m => m.Id == id);
+        if (medico is null)
         {
             throw new Exception("Não existe um médico com esse Id");
         }

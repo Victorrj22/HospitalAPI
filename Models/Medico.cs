@@ -16,4 +16,14 @@ public partial class Medico
     public int Agenda { get; set; }
 
     public virtual ICollection<Consulta> Consulta { get; set; } = new List<Consulta>();
+    
+    public string GetEspecialidade()
+    {
+        return ((EspecialidadeMedicoEnum)Especialidade).ToString();
+    }
+    
+    public string GetDiaAtendimento()
+    {
+        return ((DiasAtendimentoEnum)Agenda).ToString();
+    }
 }
