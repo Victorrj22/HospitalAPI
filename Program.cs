@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 var serviceHospital = new ServiceConsulta(new DbgeralContext());
 var serviceMedico = new ServiceMedico(new DbgeralContext());
-//var servicePaciente = new ServicePaciente(new DbgeralContext()); // Instância do serviço de pacientes
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<DbgeralContext>();
@@ -115,37 +115,44 @@ app.MapPost("/pacientes", async (ServicePaciente servicePaciente, PacienteReques
 
 
 // Endpoint para atualizar um paciente
-// app.MapPut("/pacientes/{id}",
-//     async (int id, string nome, DateTime data_Nasc, decimal peso, decimal altura, int? telefone, int? endereco) =>
-//     {
-//         var pacienteAtualizado =
-//             await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
-//
-//         // Verifica se o paciente foi encontrado e atualizado com sucesso
-//         if (pacienteAtualizado != null)
-//         {
-//             return Results.Ok(pacienteAtualizado); // Retorna o paciente atualizado
-//         }
-//         else
-//         {
-//             return
-//                 Results.NotFound(
-//                     $"Paciente com ID {id} não encontrado."); // Retorna erro 404 se o paciente não foi encontrado
-//         }
-//     }).Produces<Paciente>().WithName("pacientes/update").WithOpenApi();
-//
-//
-// // Pacientes: Deleta um paciente
-// app.MapDelete("/pacientes/{id}", async (int id) =>
-// {
-//     var pacienteDeletado = await servicePaciente.DeletarPaciente(id);
-//     if (pacienteDeletado == null)
-//     {
-//         return Results.NotFound();
-//     }
-//
-//     return Results.Ok(pacienteDeletado);
-// }).Produces<Paciente>().WithName("pacientes/delete").WithOpenApi();
+app.MapPut("/pacientes/{id}",
+    async (ServicePaciente servicePaciente, PacienteRequest pacienteRequest, int id) =>
+    {
+        var nome = pacienteRequest.nome;
+        var data_Nasc = pacienteRequest.data_nascimento;
+        var peso = pacienteRequest.peso;
+        var altura = pacienteRequest.altura;
+        var telefone = pacienteRequest.telefone;
+        var endereco = pacienteRequest.endereco;
+        
+        var pacienteAtualizado =
+            await servicePaciente.AtualizarPaciente(id, nome, data_Nasc, peso, altura, telefone, endereco);
+
+        // Verifica se o paciente foi encontrado e atualizado com sucesso
+        if (pacienteAtualizado != null)
+        {
+            return Results.Ok(pacienteAtualizado); // Retorna o paciente atualizado
+        }
+        else
+        {
+            return
+                Results.NotFound(
+                    $"Paciente com ID {id} não encontrado."); // Retorna erro 404 se o paciente não foi encontrado
+        }
+    }).Produces<Paciente>().WithName("pacientes/update").WithOpenApi();
+
+
+// Pacientes: Deleta um paciente
+app.MapDelete("/pacientes/{id}", async (ServicePaciente servicePaciente, int id) =>
+{
+    var pacienteDeletado = await servicePaciente.DeletarPaciente(id);
+    if (pacienteDeletado == null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(pacienteDeletado);
+}).Produces<Paciente>().WithName("pacientes/delete").WithOpenApi();
 
 #endregion
 
