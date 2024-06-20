@@ -176,7 +176,7 @@ app.MapGet("/medicos/{id}", async (ServiceMedico serviceMedico, int id) =>
 }).WithName("medicos/id").WithOpenApi();
 
 // Cria um novo médico
-app.MapPost("/medicos/{id}", async (ServiceMedico serviceMedico, MedicoRequest medicoRequest) =>
+app.MapPost("/medicos/", async (ServiceMedico serviceMedico, MedicoRequest medicoRequest) =>
 {
     var especialidade = (int)Enum.Parse<EspecialidadeMedicoEnum>(medicoRequest.especialidade);
     var agenda = (int)Enum.Parse<DiasAtendimentoEnum>(medicoRequest.dia_atendimento);
